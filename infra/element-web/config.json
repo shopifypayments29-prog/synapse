@@ -1,0 +1,53 @@
+{
+    "default_server_config": {
+        "m.homeserver": {
+            "base_url": "http://localhost:8008",
+            "server_name": "synapse.chat"
+        }
+    },
+    "disable_custom_urls": false,
+    "disable_guests": false,
+    "disable_login_language_selector": false,
+    "disable_3pid_login": false,
+    "force_verification": false,
+    "brand": "SynapseChat",
+    "brand_suffix": "SynapseChat",
+    "integrations_ui_url": "",
+    "integrations_rest_url": "",
+    "integrations_widgets_urls": [],
+    "default_widget_container_height": 280,
+    "default_country_code": "IN",
+    "show_labs_settings": true,
+    "features": {
+        "feature_group_calls": true,
+        "feature_element_call_video_rooms": true,
+        "feature_element_call_room": true,
+        "feature_thread": true,
+        "feature_threadnotifications": true,
+        "feature_stickers": true,
+        "feature_reactions": true,
+        "feature_voice_broadcast": true,
+        "feature_location_sharing": true,
+        "feature_polls": true
+    },
+    "default_federate": false,
+    "default_theme": "light",
+    "room_directory": {
+        "servers": ["synapse.chat"]
+    },
+    "enable_presence_by_hs_url": {
+        "http://localhost:8008": true
+    },
+    "setting_defaults": {
+        "breadcrumbs": true,
+        "message_ordering": "recent"
+    },
+    "jitsi": {
+        "preferred_domain": ""
+    },
+    "element_call": {
+        "url": "http://localhost:7880",
+        "brand": "SynapseChat Call"
+    },
+    "map_style_url": ""
+}

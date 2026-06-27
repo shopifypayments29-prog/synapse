@@ -3,6 +3,18 @@
 # Then run: ./scripts/register-test-users.sh
 
 services:
+  # ─── Element Web Client ───
+  element-web:
+    image: vectorim/element-web:latest
+    container_name: synapsechat-web
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    volumes:
+      - ./infra/element-web/config.json:/app/config.json:ro
+    depends_on:
+      - synapse
+
   # ─── Synapse Homeserver ───
   synapse:
     image: matrixdotorg/synapse:latest
