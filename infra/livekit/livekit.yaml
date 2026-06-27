@@ -9,12 +9,10 @@ rtc:
   use_external_ip: false
 
 redis:
-  address: redis:6379
+  address: synapsechat-redis:6379
 
 keys:
-  # Dev keys - CHANGE in production
-  - name: devkey
-    secret: devsecret
+  devkey: devsecret
 
 logging:
   level: info
@@ -22,10 +20,5 @@ logging:
 room:
   auto_create: true
 
-webhook:
-  urls: []
-
 turn:
-  enabled: true
-  udp_port: 3478
-  tls_port: 5349
+  enabled: false

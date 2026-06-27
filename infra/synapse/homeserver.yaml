@@ -1,46 +1,48 @@
 # SynapseChat Synapse Homeserver Configuration
 # Single-server mode (federation disabled for initial launch)
-# Generated for development environment
 
 # ─── Server ───
 server_name: "synapse.chat"
 pid_file: /data/homeserver.pid
-log_config: /data/log.config
+report_stats: false
+log_config: "/data/synapse.chat.log.config"
 media_store_path: /data/media_store
 uploads_path: /data/uploads
-
-# ─── Single-Server Mode ───
-# Federation is DISABLED for initial launch (like Telegram's centralized model)
-# Can be re-enabled later for inter-server communication
-federation_enabled: false
-
 public_baseurl: "https://synapse.chat"
 
-# ─── Database ───
+# ─── Listeners ───
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    resources:
+      - names: [client, federation]
+        compress: false
+
+# ─── Single-Server Mode ───
+federation_enabled: false
+
+# ─── Database (PostgreSQL) ───
 database:
   name: psycopg2
   args:
     user: synapsechat
     password: synapsechat_dev_password
     database: synapsechat
-    host: postgres
+    host: synapsechat-postgres
     cp_min: 5
     cp_max: 20
 
 # ─── Redis (for worker replication) ───
 redis:
   enabled: true
-  host: redis
+  host: synapsechat-redis
   port: 6379
 
-# ─── Registration ───
-# Development: open registration with captcha disabled
-# Production: enable captcha and/or invite-only
+# ─── Registration (dev mode: open, no verification) ───
 enable_registration: true
 enable_registration_without_verification: true
-
-# Registration requires email verification (disable for dev)
-# require_email_for_signup: true
 
 # ─── Rate Limiting ───
 rc_login:
@@ -78,7 +80,7 @@ rc_invites:
     per_second: 0.2
     burst_count: 10
 
-# ─── Encryption (E2EE by default, like Telegram Secret Chats) ───
+# ─── Encryption (E2EE by default) ───
 encryption_enabled_by_default_for_room_type: all
 
 # ─── Media ───
@@ -103,12 +105,11 @@ thumbnail_sizes:
     method: scale
 
 # ─── Retention ───
-# Message retention policies (Telegram keeps messages indefinitely by default)
 retention:
   enabled: true
   default_policy:
     min_lifetime: 1d
-    max_lifetime: 3650d  # 10 years max
+    max_lifetime: 3650d
   allowed_lifetime_min: 1d
   allowed_lifetime_max: 3650d
 
@@ -117,14 +118,10 @@ push:
   enabled: true
 
 # ─── Rooms ───
-# Default room settings (Telegram-like)
 default_room_version: "10"
-
-# Auto-join rooms for new users (like Telegram's default channels)
 auto_join_rooms:
   - "#announcements:synapse.chat"
   - "#welcome:synapse.chat"
-
 autocreate_auto_join_rooms: true
 autocreate_auto_join_rooms_federated: false
 
@@ -137,28 +134,29 @@ user_directory:
   enabled: true
   search_all_users: true
 
-# ─── Email ───
+# ─── Email (placeholder) ───
 email:
   smtp_host: "mail.synapse.chat"
   smtp_port: 587
   smtp_user: "noreply@synapse.chat"
   smtp_pass: "CHANGE_ME_IN_PRODUCTION"
   require_transport_security: true
-  notif_from: "SynapseChat <noreply@synapse.chat"
+  notif_from: "SynapseChat <noreply@synapse.chat>"
   app_name: "SynapseChat"
 
-# ─── Logging ───
-log_config: /data/log.config
-
-# ─── API ───
-# Enable experimental features for Telegram-like functionality
+# ─── Experimental Features ───
 experimental_features:
-  msc3266_enabled: true    # Room summary API
-  msc3664_enabled: true    # Group voice calls
+  msc3266_enabled: true
+  msc3664_enabled: true
 
-# ─── Workers (single-process for dev, multi-process for prod) ───
-# In production, split into:
-#   - main: handles client API
-#   - generic_worker: handles sync, federation (when enabled)
-#   - media_repository: handles media uploads/downloads
-#   - pusher: handles push notifications
+# ─── Secrets (generated) ───
+registration_shared_secret: "kdXtS#aPIiKiN9X-L87tZpJ+Yb^3bGLeO#yUU8M2&@fEU^~rAh"
+macaroon_secret_key: "w5D0JZB^M+-M1n,5N9EP.JZ@3oFEwmeJc+;BQVdml^_InQ9mZg"
+form_secret: "W3R#Qx~@vrhymYM~g~pEeGEYY+,CnpZkmiMJ+Ico3ir~p&7LoP"
+signing_key_path: "/data/synapse.chat.signing.key"
+
+# ─── Trusted Key Servers ───
+trusted_key_servers:
+  - server_name: "matrix.org"
+
+# vim:ft=yaml
