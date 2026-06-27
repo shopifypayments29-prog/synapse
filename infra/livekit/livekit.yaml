@@ -1,0 +1,31 @@
+# LiveKit Server Configuration for SynapseChat
+# Development mode - voice/video calling
+
+port: 7880
+rtc:
+  tcp_port: 7881
+  port_range_start: 49152
+  port_range_end: 49200
+  use_external_ip: false
+
+redis:
+  address: redis:6379
+
+keys:
+  # Dev keys - CHANGE in production
+  - name: devkey
+    secret: devsecret
+
+logging:
+  level: info
+
+room:
+  auto_create: true
+
+webhook:
+  urls: []
+
+turn:
+  enabled: true
+  udp_port: 3478
+  tls_port: 5349

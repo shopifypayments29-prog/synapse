@@ -1,0 +1,193 @@
+# SynapseChat Development Environment
+# One-command start: docker compose up -d
+# Then run: ./scripts/register-test-users.sh
+
+services:
+  # ─── Synapse Homeserver ───
+  synapse:
+    image: matrixdotorg/synapse:latest
+    container_name: synapsechat-synapse
+    restart: unless-stopped
+    ports:
+      - "8008:8008"   # Client API
+      - "8009:8009"   # Federation (disabled, but port exposed for future use)
+    volumes:
+      - ./infra/synapse:/data
+      - ./logs:/var/log/synapse
+    environment:
+      SYNAPSE_CONFIG_PATH: /data/homeserver.yaml
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─── PostgreSQL ───
+  postgres:
+    image: postgres:16-alpine
+    container_name: synapsechat-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: synapsechat
+      POSTGRES_USER: synapsechat
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-synapsechat_dev_password}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synapsechat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis ───
+  redis:
+    image: redis:7-alpine
+    container_name: synapsechat-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Sygnal Push Gateway ───
+  sygnal:
+    image: matrixdotorg/sygnal:latest
+    container_name: synapsechat-sygnal
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    volumes:
+      - ./infra/sygnal:/config
+    command: ["/config/sygnal.yaml"]
+    depends_on:
+      synapse:
+        condition: service_healthy
+
+  # ─── LiveKit SFU (Voice/Video) ───
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: synapsechat-livekit
+    restart: unless-stopped
+    ports:
+      - "7880:7880"   # HTTP
+      - "7881:7881"   # RTC (TCP)
+      - "7882:7882/udp"  # RTC (UDP)
+    volumes:
+      - ./infra/livekit:/etc/livekit
+    command: --config /etc/livekit/livekit.yaml
+    environment:
+      LIVEKIT_KEYS: "${LIVEKIT_KEYS:-devkey: devsecret}"
+
+  # ─── LiveKit JWT Service ───
+  lk-jwt-service:
+    image: livekit/lk-jwt-service:latest
+    container_name: synapsechat-lk-jwt
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      LIVEKIT_URL: "ws://livekit:7880"
+      LIVEKIT_API_KEY: "${LIVEKIT_API_KEY:-devkey}"
+      LIVEKIT_API_SECRET: "${LIVEKIT_API_SECRET:-devsecret}"
+    depends_on:
+      - livekit
+
+  # ─── coturn TURN Server ───
+  coturn:
+    image: coturn/coturn:latest
+    container_name: synapsechat-coturn
+    restart: unless-stopped
+    ports:
+      - "3478:3478/tcp"     # STUN/TURN
+      - "3478:3478/udp"
+      - "5349:5349/tcp"    # TURNS
+      - "5349:5349/udp"
+      - "49152-49200:49152-49200/udp"  # Media relay
+    volumes:
+      - ./infra/coturn:/etc/coturn
+      - ./data/turn:/var/lib/coturn
+    command: [
+      "-c", "/etc/coturn/turnserver.conf",
+      "--log-stdout"
+    ]
+
+  # ─── MinIO (S3-compatible media storage) ───
+  minio:
+    image: minio/minio:latest
+    container_name: synapsechat-minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Console
+    volumes:
+      - ./data/media:/data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-synapsechat}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-synapsechat_dev_password}
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─── Nginx Reverse Proxy ───
+  nginx:
+    image: nginx:alpine
+    container_name: synapsechat-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - synapse
+      - sygnal
+
+  # ─── Prometheus (Monitoring) ───
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: synapsechat-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=30d'
+
+  # ─── Grafana (Dashboards) ───
+  grafana:
+    image: grafana/grafana:latest
+    container_name: synapsechat-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-synapsechat_dev}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+
+volumes:
+  prometheus_data:
+  grafana_data:

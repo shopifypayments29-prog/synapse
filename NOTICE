@@ -1,0 +1,69 @@
+SynapseChat — Open-Source Telegram-Like Messaging App
+Copyright © 2024-2026 SynapseChat Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+THIRD-PARTY SOFTWARE NOTICES
+
+This project incorporates code from the following open-source projects.
+Each project retains its own copyright and license terms.
+
+1. Element Web — Copyright © 2024 Element Labs Limited
+   License: Apache License 2.0
+   Source: https://github.com/element-hq/element-web
+
+2. Element X Android — Copyright © 2024 Element Labs Limited
+   License: Apache License 2.0
+   Source: https://github.com/element-hq/element-x-android
+
+3. Element X iOS — Copyright © 2024 Element Labs Limited
+   License: Apache License 2.0
+   Source: https://github.com/element-hq/element-x-ios
+
+4. Synapse — Copyright © 2024 Element Labs Limited
+   License: Apache License 2.0
+   Source: https://github.com/element-hq/synapse
+
+5. Sygnal — Copyright © 2024 Element Labs Limited
+   License: Apache License 2.0
+   Source: https://github.com/element-hq/sygnal
+
+6. Element Call — Copyright © 2024 Element Labs Limited
+   License: Apache License 2.0
+   Source: https://github.com/element-hq/element-call
+
+7. Matrix Rust SDK — Copyright © 2024 The Matrix.org Foundation C.I.C.
+   License: Apache License 2.0
+   Source: https://github.com/matrix-org/matrix-rust-sdk
+
+8. Compound (Design System) — Copyright © 2024 Element Labs Limited
+   License: Apache License 2.0
+   Source: https://github.com/element-hq/compound
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+AGPL-3.0 COMPLIANCE
+
+As required by the AGPL-3.0 license, the complete source code for all
+modified versions of AGPL-3.0 licensed software (including Synapse and
+its dependencies) is available at:
+
+  https://github.com/synapsechat/
+
+If you distribute a modified version of this software over a network,
+you must make the source code available under the same license terms.
+See the full AGPL-3.0 license text at:
+https://www.gnu.org/licenses/agpl-3.0.en.html

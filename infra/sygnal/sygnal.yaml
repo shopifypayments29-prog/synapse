@@ -1,0 +1,35 @@
+# Sygnal Push Gateway Configuration for SynapseChat
+# Development mode - push notifications via FCM and APNs
+
+apps:
+  # Android (FCM)
+  - type: gcm
+    api_version: v1
+    project_id: synapsechat-dev
+    service_account_file: /config/fcm-service-account.json
+    device_type: android
+
+  # iOS (APNs)
+  - type: apns
+    certfile:  # Path to APNs certificate (production)
+    # or use key-based auth:
+    keyfile: /config/apns_key.p8
+    key_id: CHANGE_ME
+    team_id: CHANGE_ME
+    topic: org.synapsechat.ios
+
+log:
+  level: INFO
+  format: '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s'
+
+db:
+  name: /config/sygnal.db
+
+http:
+  bind: '0.0.0.0'
+  port: 8200
+
+# SynapseChat homeserver
+homeserver:
+  name: synapse.chat
+  url: http://synapse:8008

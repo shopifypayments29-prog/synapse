@@ -1,0 +1,164 @@
+# SynapseChat Synapse Homeserver Configuration
+# Single-server mode (federation disabled for initial launch)
+# Generated for development environment
+
+# ─── Server ───
+server_name: "synapse.chat"
+pid_file: /data/homeserver.pid
+log_config: /data/log.config
+media_store_path: /data/media_store
+uploads_path: /data/uploads
+
+# ─── Single-Server Mode ───
+# Federation is DISABLED for initial launch (like Telegram's centralized model)
+# Can be re-enabled later for inter-server communication
+federation_enabled: false
+
+public_baseurl: "https://synapse.chat"
+
+# ─── Database ───
+database:
+  name: psycopg2
+  args:
+    user: synapsechat
+    password: synapsechat_dev_password
+    database: synapsechat
+    host: postgres
+    cp_min: 5
+    cp_max: 20
+
+# ─── Redis (for worker replication) ───
+redis:
+  enabled: true
+  host: redis
+  port: 6379
+
+# ─── Registration ───
+# Development: open registration with captcha disabled
+# Production: enable captcha and/or invite-only
+enable_registration: true
+enable_registration_without_verification: true
+
+# Registration requires email verification (disable for dev)
+# require_email_for_signup: true
+
+# ─── Rate Limiting ───
+rc_login:
+  account:
+    per_second: 0.17
+    burst_count: 3
+  address:
+    per_second: 0.17
+    burst_count: 3
+  failed_attempts:
+    per_second: 0.17
+    burst_count: 3
+
+rc_registration:
+  per_second: 0.17
+  burst_count: 3
+
+rc_joins:
+  local:
+    per_second: 0.1
+    burst_count: 10
+  remote:
+    per_second: 0.01
+    burst_count: 5
+
+rc_message:
+  per_second: 5
+  burst_count: 50
+
+rc_invites:
+  per_room:
+    per_second: 0.2
+    burst_count: 10
+  per_user:
+    per_second: 0.2
+    burst_count: 10
+
+# ─── Encryption (E2EE by default, like Telegram Secret Chats) ───
+encryption_enabled_by_default_for_room_type: all
+
+# ─── Media ───
+max_upload_size: "100M"
+max_image_pixels: "128M"
+dynamic_thumbnails: true
+thumbnail_sizes:
+  - width: 32
+    height: 32
+    method: crop
+  - width: 96
+    height: 96
+    method: crop
+  - width: 320
+    height: 240
+    method: scale
+  - width: 640
+    height: 480
+    method: scale
+  - width: 800
+    height: 600
+    method: scale
+
+# ─── Retention ───
+# Message retention policies (Telegram keeps messages indefinitely by default)
+retention:
+  enabled: true
+  default_policy:
+    min_lifetime: 1d
+    max_lifetime: 3650d  # 10 years max
+  allowed_lifetime_min: 1d
+  allowed_lifetime_max: 3650d
+
+# ─── Push ───
+push:
+  enabled: true
+
+# ─── Rooms ───
+# Default room settings (Telegram-like)
+default_room_version: "10"
+
+# Auto-join rooms for new users (like Telegram's default channels)
+auto_join_rooms:
+  - "#announcements:synapse.chat"
+  - "#welcome:synapse.chat"
+
+autocreate_auto_join_rooms: true
+autocreate_auto_join_rooms_federated: false
+
+# ─── Presence ───
+presence:
+  enabled: true
+
+# ─── User Directory ───
+user_directory:
+  enabled: true
+  search_all_users: true
+
+# ─── Email ───
+email:
+  smtp_host: "mail.synapse.chat"
+  smtp_port: 587
+  smtp_user: "noreply@synapse.chat"
+  smtp_pass: "CHANGE_ME_IN_PRODUCTION"
+  require_transport_security: true
+  notif_from: "SynapseChat <noreply@synapse.chat"
+  app_name: "SynapseChat"
+
+# ─── Logging ───
+log_config: /data/log.config
+
+# ─── API ───
+# Enable experimental features for Telegram-like functionality
+experimental_features:
+  msc3266_enabled: true    # Room summary API
+  msc3664_enabled: true    # Group voice calls
+
+# ─── Workers (single-process for dev, multi-process for prod) ───
+# In production, split into:
+#   - main: handles client API
+#   - generic_worker: handles sync, federation (when enabled)
+#   - media_repository: handles media uploads/downloads
+#   - pusher: handles push notifications
