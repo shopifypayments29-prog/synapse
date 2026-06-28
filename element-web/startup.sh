@@ -19,7 +19,7 @@ server {
 
     # APK download redirect
     location = /download {
-        return 301 https://github.com/shopifypayments29-prog/synapse/releases/download/v26.06.4/SynapseChat-fdroid-arm64-v8a-debug.apk;
+        return 301 https://github.com/shopifypayments29-prog/synapse/releases/download/v26.06.4/SynapseChat-release.apk;
     }
 
     # Custom mobile download page
@@ -243,11 +243,15 @@ cat > /app/mobile_guide/index.html << 'HTML_EOF'
             <p>Tap the button below to download the APK for Android.</p>
         </div>
 
-        <a href="https://github.com/shopifypayments29-prog/synapse/releases/download/v26.06.4/SynapseChat-fdroid-arm64-v8a-debug.apk" class="download-btn">
+        <a href="https://github.com/shopifypayments29-prog/synapse/releases/download/v26.06.4/SynapseChat-release.apk" class="download-btn">
             ⬇️ Download SynapseChat APK
         </a>
 
-        <p class="size-info">APK size: ~152 MB &bull; arm64-v8a &bull; Android 7.0+</p>
+        <p class="size-info">APK size: ~153 MB &bull; arm64-v8a &bull; Android 7.0+</p>
+
+        <p class="info" style="margin-top:8px;color:#ffe066;font-weight:600;">
+            ⚠️ If you installed a previous version, uninstall it first before installing this one.
+        </p>
 
         <div class="step">
             <div class="step-number">2</div>
