@@ -1,19 +1,21 @@
+# SynapseChat Element Web — runtime customization via startup script
+# Stage 1: Download startup script from GitHub
+FROM alpine:3.20 AS script-downloader
+RUN apk add --no-cache wget
+RUN wget -qO /tmp/startup.sh https://raw.githubusercontent.com/shopifypayments29-prog/synapse/main/element-web/startup.sh
+
+# Stage 2: Element Web with customization
 FROM vectorim/element-web:latest
 
-# Cache buster — forces rebuild when config changes
-ARG REBUILD=20260628
+# Switch to root to apply customizations
+USER root
 
-# Replace the default config with our SynapseChat config
-COPY config.json /app/config.json
+# Copy the startup script from the downloader stage and set permissions
+COPY --from=script-downloader /tmp/startup.sh /app/startup.sh
+RUN chmod +x /app/startup.sh
 
-# Replace nginx config to serve custom pages and APK redirect
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Make /app writable so the startup script can modify files
+RUN chmod -R u+rw /app
 
-# Replace branding in index.html
-RUN sed -i 's|<title>Element</title>|<title>SynapseChat</title>|g' /app/index.html && \
-    sed -i 's|content="Element"|content="SynapseChat"|g' /app/index.html && \
-    sed -i 's|apple-mobile-web-app-title" content="Element"|apple-mobile-web-app-title" content="SynapseChat"|g' /app/index.html && \
-    sed -i 's|application-name" content="Element"|application-name" content="SynapseChat"|g' /app/index.html
-
-# Replace the mobile guide page with our custom download page
-COPY mobile_guide.html /app/mobile_guide/index.html
+# Override the entrypoint to use our startup script (runs as root)
+ENTRYPOINT ["/app/startup.sh"]
