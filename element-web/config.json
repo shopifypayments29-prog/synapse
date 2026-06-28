@@ -1,0 +1,49 @@
+{
+    "default_server_config": {
+        "m.homeserver": {
+            "base_url": "https://synapse-production-207c.up.railway.app",
+            "server_name": "synapsechat.up.railway.app"
+        }
+    },
+    "disable_custom_urls": false,
+    "disable_guests": true,
+    "disable_login_language_selector": false,
+    "disable_3pid_login": true,
+    "force_verification": true,
+    "brand": "SynapseChat",
+    "brand_suffix": "SynapseChat",
+    "default_widget_container_height": 280,
+    "default_country_code": "IN",
+    "show_labs_settings": true,
+    "features": {
+        "feature_group_calls": true,
+        "feature_video_rooms": true,
+        "feature_thread": true,
+        "feature_stickers": true,
+        "feature_reactions": true,
+        "feature_voice_broadcast": true,
+        "feature_location_share": true,
+        "feature_polls": true
+    },
+    "default_federate": false,
+    "default_theme": "dark",
+    "room_directory": {
+        "servers": ["synapsechat.up.railway.app"]
+    },
+    "enable_presence_by_hs_url": {
+        "https://synapse-production-207c.up.railway.app": true
+    },
+    "setting_defaults": {
+        "breadcrumbs": true,
+        "UIFeature.advancedEncryption": true
+    },
+    "help_encryption_url": "https://synapsechat.up.railway.app/help/encryption",
+    "help_key_storage_url": "https://synapsechat.up.railway.app/help/encryption#key-storage",
+    "element_call": {
+        "url": "https://element-call-production-0707.up.railway.app",
+        "brand": "SynapseChat Call"
+    },
+    "map_style_url": "https://demotiles.maplibre.org/style.json",
+    "show_marks_unverified": false,
+    "mobile_guide_toast": false
+}
