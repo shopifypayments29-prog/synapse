@@ -19,7 +19,7 @@ server {
 
     # APK download redirect
     location = /download {
-        return 301 https://github.com/shopifypayments29-prog/synapse/releases/download/v26.07.02/SynapseChat-v7.apk;
+        return 301 https://github.com/shopifypayments29-prog/synapse/releases/download/v26.07.03/SynapseChat-v8.apk;
     }
 
     # Version JSON for in-app update checks
@@ -259,8 +259,8 @@ cat > /app/mobile_guide/index.html << 'HTML_EOF'
             <p>Tap the button below to download the APK for Android.</p>
         </div>
 
-        <a href="https://github.com/shopifypayments29-prog/synapse/releases/download/v26.07.02/SynapseChat-v7.apk" class="download-btn">
-            ⬇️ Download SynapseChat APK (v26.07.03)
+        <a href="https://github.com/shopifypayments29-prog/synapse/releases/download/v26.07.03/SynapseChat-v8.apk" class="download-btn">
+            ⬇️ Download SynapseChat APK (v26.07.04)
         </a>
 
         <p class="size-info">APK size: ~155 MB · arm64-v8a · Android 7.0+</p>
