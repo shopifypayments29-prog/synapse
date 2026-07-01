@@ -147,6 +147,11 @@ config['rc_login'] = {
 config['rc_registration'] = {'per_second': 0.17, 'burst_count': 3}
 config['rc_delayed_event_mgmt'] = {'per_second': 1, 'burst_count': 20}
 
+# Auto-delete stale devices after 90 days of inactivity.
+# This prevents phantom devices (no keys uploaded) from accumulating
+# and causing "encryption failed — unsigned devices" errors.
+config['delete_stale_devices_after'] = '90d'
+
 # Server name and public baseurl
 server_name = os.environ.get('SERVER_NAME', 'synapsechat.up.railway.app')
 config['server_name'] = server_name
@@ -276,6 +281,20 @@ try:
             print('No cross-signing keys to clean up')
     except Exception as e:
         print(f'Cross-signing check warning (may not exist yet): {e}')
+
+    # Clean up phantom devices (devices with no last_seen and no display name).
+    # These are created when a user starts a session but never completes login/crypto setup.
+    # They cause "encryption failed — unsigned devices" errors because they have no keys.
+    try:
+        cur.execute("""
+            DELETE FROM devices
+            WHERE last_seen IS NULL
+              AND user_id IN (SELECT name FROM users WHERE NOT admin)
+        """)
+        phantom_rows = cur.rowcount
+        print(f'Phantom device cleanup: {phantom_rows} phantom devices deleted (no last_seen, non-admin users)')
+    except Exception as e:
+        print(f'Phantom device cleanup warning (may not exist yet): {e}')
 
     # Promote admin users and reset admin password
     admin_user = os.environ.get('SYNAPSE_ADMIN_USER', '')
