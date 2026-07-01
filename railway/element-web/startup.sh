@@ -19,7 +19,16 @@ server {
 
     # APK download redirect
     location = /download {
-        return 301 https://github.com/shopifypayments29-prog/synapse/releases/download/v26.06.4/SynapseChat-fdroid-arm64-v8a-debug.apk;
+        return 301 https://github.com/shopifypayments29-prog/synapse/releases/download/v26.07.02/SynapseChat-v7.apk;
+    }
+
+    # Version JSON for in-app update checks
+    location = /version.json {
+        root /app;
+        default_type application/json;
+        add_header Access-Control-Allow-Origin '*' always;
+        add_header Cache-Control 'no-cache, no-store, must-revalidate' always;
+        try_files $uri =404;
     }
 
     # Custom mobile download page
@@ -48,7 +57,7 @@ cat > /app/config.json << 'CONFIG_EOF'
 {
     "default_server_config": {
         "m.homeserver": {
-            "base_url": "https://synapse-production-207c.up.railway.app",
+            "base_url": "https://synapsechat.up.railway.app",
             "server_name": "synapsechat.up.railway.app"
         }
     },
@@ -65,6 +74,7 @@ cat > /app/config.json << 'CONFIG_EOF'
     "features": {
         "feature_group_calls": true,
         "feature_video_rooms": true,
+        "feature_element_call_video_rooms": true,
         "feature_thread": true,
         "feature_stickers": true,
         "feature_reactions": true,
@@ -78,7 +88,7 @@ cat > /app/config.json << 'CONFIG_EOF'
         "servers": ["synapsechat.up.railway.app"]
     },
     "enable_presence_by_hs_url": {
-        "https://synapse-production-207c.up.railway.app": true
+        "https://synapsechat.up.railway.app": true
     },
     "setting_defaults": {
         "breadcrumbs": true,
@@ -90,9 +100,15 @@ cat > /app/config.json << 'CONFIG_EOF'
         "url": "https://element-call-production-0707.up.railway.app",
         "brand": "SynapseChat Call"
     },
+    "integrations_ui_url": "https://scalar.vector.im/",
+    "integrations_rest_url": "https://scalar.vector.im/api",
+    "widget_base_urls": ["https://neoboard.element.io"],
     "map_style_url": "https://demotiles.maplibre.org/style.json",
-    "show_marks_unverified": false,
-    "mobile_guide_toast": false
+    "show_marks_unverified": true,
+    "mobile_guide_toast": false,
+    "push": {
+        "gateway_url": "https://ntfy-push-production.up.railway.app/_matrix/push/v1/notify"
+    }
 }
 CONFIG_EOF
 echo "✓ Config replaced"
@@ -243,16 +259,26 @@ cat > /app/mobile_guide/index.html << 'HTML_EOF'
             <p>Tap the button below to download the APK for Android.</p>
         </div>
 
-        <a href="https://github.com/shopifypayments29-prog/synapse/releases/download/v26.06.4/SynapseChat-fdroid-arm64-v8a-debug.apk" class="download-btn">
-            ⬇️ Download SynapseChat APK
+        <a href="https://github.com/shopifypayments29-prog/synapse/releases/download/v26.07.02/SynapseChat-v7.apk" class="download-btn">
+            ⬇️ Download SynapseChat APK (v26.07.03)
         </a>
 
-        <p class="size-info">APK size: ~152 MB &bull; arm64-v8a &bull; Android 7.0+</p>
+        <p class="size-info">APK size: ~155 MB · arm64-v8a · Android 7.0+</p>
+
+        <p class="info" style="margin-top:8px;color:#ffe066;font-weight:600;">
+            ⚠️ If you installed a previous version, uninstall it first before installing this one.
+        </p>
 
         <div class="step">
             <div class="step-number">2</div>
-            <h3>Come back here to sign in</h3>
-            <p>After installing, open SynapseChat and sign in with your account.</p>
+            <h3>Install ntfy for Push Notifications</h3>
+            <p>Install the <strong>ntfy</strong> app from <a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" style="color:#fff;text-decoration:underline;">Google Play</a> or <a href="https://f-droid.org/en/packages/io.heckel.ntfy/" style="color:#fff;text-decoration:underline;">F-Droid</a>. Open it, tap <strong>+</strong>, subscribe to <code style="background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:4px;">synapsechat-<em>your-username</em></code>, then in SynapseChat go to Settings → Notifications → Push and enable push notifications.</p>
+        </div>
+
+        <div class="step">
+            <div class="step-number">3</div>
+            <h3>Sign in to SynapseChat</h3>
+            <p>Open SynapseChat and sign in with your account, or create a new one.</p>
         </div>
 
         <div class="features">

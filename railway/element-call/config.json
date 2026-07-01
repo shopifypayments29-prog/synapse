@@ -1,0 +1,25 @@
+{
+    "default_server_config": {
+        "m.homeserver": {
+            "base_url": "https://synapsechat.up.railway.app",
+            "server_name": "synapsechat.up.railway.app"
+        }
+    },
+    "livekit": {
+        "livekit_service_url": "wss://livekit-production-ef11.up.railway.app",
+        "livekit_jwt_service_url": "https://lk-jwt-service-production.up.railway.app"
+    },
+    "element_call": {
+        "url": "https://element-call-production-0707.up.railway.app"
+    },
+    "features": {
+        "feature_use_device_session_member_events": true,
+        "feature_reactions": true,
+        "feature_raise_hand": true,
+        "feature_group_calls_without_video_and_audio": true
+    },
+    "posthog_project_id": null,
+    "posthog_api_host": null,
+    "sentry_dsn": null,
+    "rageshake_url": null
+}

@@ -1,0 +1,35 @@
+# LiveKit server configuration for Railway
+port: 7880
+rtc:
+  # On Railway, use node_ip_mode to auto-discover the external IP
+  # The LIVEKIT_NODE_IP_MODE env var will be set to "auto"
+  # which enables use_external_ip with STUN discovery
+  use_external_ip: true
+  # TCP fallback port
+  tcp_port: 7881
+  # Port range for RTC traffic
+  port_range_start: 50000
+  port_range_end: 60000
+  # External TURN servers for NAT traversal
+  # freeturn.net free tier
+  turn_servers:
+    - host: freeturn.net
+      port: 3478
+      protocol: udp
+      username: free
+      credential: free
+    - host: freeturn.net
+      port: 3478
+      protocol: tcp
+      username: free
+      credential: free
+    - host: freeturn.net
+      port: 5349
+      protocol: tls
+      username: free
+      credential: free
+room:
+  auto_create: false
+  enable_remote_unmute: true
+logging:
+  level: info
