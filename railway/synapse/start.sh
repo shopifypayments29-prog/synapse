@@ -237,6 +237,20 @@ try:
     src = cur.rowcount
     print(f'Database fix: authenticated={auth}, media_origin={orig}, media_source={src}')
 
+    # Clean up stale cross-signing keys and signatures
+    # This removes ALL cross-signing data so the bootstrap script can
+    # recreate clean keys without stale signature conflicts.
+    # Without this, users with old cross-signing key signatures get
+    # "encryption failed due to unsigned devices" errors.
+    try:
+        cur.execute('DELETE FROM e2e_cross_signing_signatures')
+        sig_rows = cur.rowcount
+        cur.execute('DELETE FROM e2e_cross_signing_keys')
+        key_rows = cur.rowcount
+        print(f'Cross-signing cleanup: {key_rows} keys, {sig_rows} signatures deleted')
+    except Exception as e:
+        print(f'Cross-signing cleanup (may not exist yet): {e}')
+
     # Promote admin users and reset admin password
     admin_user = os.environ.get('SYNAPSE_ADMIN_USER', '')
     admin_pass = os.environ.get('SYNAPSE_ADMIN_PASS', '')

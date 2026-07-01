@@ -1,0 +1,8 @@
+{
+    "versionCode": 20260703,
+    "versionName": "26.07.03",
+    "apkUrl": "https://github.com/shopifypayments29-prog/synapse/releases/download/v26.07.02/SynapseChat-v7.apk",
+    "releaseNotes": "• In-app update system — one-tap updates!\n• Fixed: Homeserver domain\n• Element Call support with LiveKit",
+    "minVersionCode": 0,
+    "forceUpdate": false
+}

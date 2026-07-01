@@ -1,0 +1,10 @@
+*.apk
+*.idsig
+synapsechat-android/
+element-x-android/
+element-x-android-fresh/
+SynapseChat-unsigned.apk
+SynapseChat-v4.apk
+SynapseChat-v4.apk.idsig
+SynapseChat-v5.apk
+SynapseChat-v5.apk.idsig

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download SynapseChat</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0dbd8b;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 480px;
+            width: 100%;
+            padding: 40px 24px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 40px;
+            line-height: 1.5;
+        }
+        .download-btn {
+            display: inline-block;
+            background: #ffffff;
+            color: #0dbd8b;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+        .download-btn:active {
+            transform: translateY(0);
+        }
+        .download-btn .icon {
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .info {
+            margin-top: 32px;
+            font-size: 14px;
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+        .size-info {
+            margin-top: 12px;
+            font-size: 13px;
+            opacity: 0.7;
+        }
+        .desktop-link {
+            margin-top: 24px;
+            display: block;
+            color: #ffffff;
+            opacity: 0.7;
+            text-decoration: underline;
+            font-size: 14px;
+        }
+        .desktop-link:hover {
+            opacity: 1;
+        }
+        .features {
+            margin-top: 40px;
+            text-align: left;
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 20px 24px;
+        }
+        .features h3 {
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+        .features li {
+            padding: 6px 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .features li::before {
+            content: "✓ ";
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">💬 SynapseChat</div>
+        <p class="subtitle">Your fully self-hosted, private messaging app.<br>Download it now for Android.</p>
+
+        <a href="https://github.com/shopifypayments29-prog/synapse/releases/download/v26.06.4/SynapseChat-fdroid-arm64-v8a-debug.apk" class="download-btn" target="_blank">
+            <span class="icon">⬇️</span> Download SynapseChat APK
+        </a>
+
+        <p class="size-info">APK size: ~152 MB &bull; arm64-v8a &bull; Android 7.0+</p>
+
+        <div class="features">
+            <h3>Why SynapseChat?</h3>
+            <ul>
+                <li>End-to-end encrypted messaging</li>
+                <li>Fully self-hosted — your data, your rules</li>
+                <li>Group video &amp; voice calls</li>
+                <li>No tracking, no ads, no analytics</li>
+                <li>Open source (AGPL-3.0)</li>
+            </ul>
+        </div>
+
+        <p class="info">
+            After downloading, you may need to enable "Install from unknown sources" in your Android settings.
+        </p>
+
+        <a href="/" class="desktop-link">← Use the desktop web version instead</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,88 @@
+# SynapseChat Synapse Configuration for Railway
+# Environment variables are used for secrets
+
+server_name: "${SERVER_NAME}"
+pid_file: /data/homeserver.pid
+report_stats: false
+
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    resources:
+      - names: [client, federation]
+        compress: false
+
+# PostgreSQL (Railway managed)
+database:
+  name: psycopg2
+  args:
+    user: "${PGUSER}"
+    password: "${PGPASSWORD}"
+    database: "${POSTGRES_DB:-railway}"
+    host: "${PGHOST}"
+    port: "${PGPORT}"
+    cp_min: 5
+    cp_max: 20
+
+# Redis (Railway managed)
+redis:
+  enabled: true
+  host: "${REDISHOST}"
+  port: "${REDISPORT}"
+  password: "${REDISPASSWORD}"
+
+# Logging
+log_config: "/data/synapsechat.up.railway.app.log.config"
+media_store_path: /data/media_store
+uploads_path: /data/uploads
+
+# Signing key
+signing_key_path: "/data/synapsechat.up.railway.app.signing.key"
+
+# Registration (open for dev, restrict in production)
+enable_registration: true
+enable_registration_without_verification: true
+
+# Rate limiting
+rc_login:
+  account:
+    per_second: 0.17
+    burst_count: 3
+  address:
+    per_second: 0.17
+    burst_count: 3
+  failed_attempts:
+    per_second: 0.17
+    burst_count: 3
+
+rc_registration:
+  per_second: 0.17
+  burst_count: 3
+
+# E2E encryption by default (like Telegram Secret Chats)
+encryption_enabled_by_default_for_room_type: all
+
+# Media
+max_upload_size: "100M"
+
+# Rooms
+default_room_version: "10"
+
+# Presence
+presence:
+  enabled: true
+
+# User directory
+user_directory:
+  enabled: true
+  search_all_users: true
+
+# Secrets (from environment)
+registration_shared_secret: "${REGISTRATION_SHARED_SECRET}"
+macaroon_secret_key: "${MACAROON_SECRET_KEY}"
+form_secret: "${FORM_SECRET}"
+
+trusted_key_servers:
+  - server_name: "matrix.org"
