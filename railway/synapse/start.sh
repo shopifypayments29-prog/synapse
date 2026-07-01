@@ -252,7 +252,7 @@ try:
             # Check if any user_signing keys exist — if not, all keys were
             # created by the server bootstrap (not by clients), so they're unusable.
             # The usage field is inside the key_data JSON column, not a separate column.
-            cur.execute("SELECT COUNT(*) FROM e2e_cross_signing_keys WHERE key_data::text LIKE '%%user_signing%%'")
+            cur.execute("SELECT COUNT(*) FROM e2e_cross_signing_keys WHERE key_json::text LIKE '%%user_signing%%'")
             us_count = cur.fetchone()[0]
             if us_count == 0:
                 # No user_signing keys = server-created keys = unusable, clean them up
