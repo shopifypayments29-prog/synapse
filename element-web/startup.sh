@@ -19,7 +19,7 @@ server {
 
     # APK download redirect
     location = /download {
-        return 301 https://github.com/shopifypayments29-prog/synapse/releases/download/v26.06.5/SynapseChat-v2.apk;
+        return 301 https://github.com/shopifypayments29-prog/synapse/releases/download/v26.06.6/SynapseChat-v3.apk;
     }
 
     # Custom mobile download page
@@ -243,7 +243,7 @@ cat > /app/mobile_guide/index.html << 'HTML_EOF'
             <p>Tap the button below to download the APK for Android.</p>
         </div>
 
-        <a href="https://github.com/shopifypayments29-prog/synapse/releases/download/v26.06.5/SynapseChat-v2.apk" class="download-btn">
+        <a href="https://github.com/shopifypayments29-prog/synapse/releases/download/v26.06.6/SynapseChat-v3.apk" class="download-btn">
             ⬇️ Download SynapseChat APK
         </a>
 
