@@ -212,7 +212,7 @@ echo "=== Config patch complete ==="
 
 # Step 4: Fix database records
 echo "Fixing media database records..."
-python3 -c "
+python3 << 'DBEOF'
 import os, psycopg2
 db_args = {
     'host': os.environ.get('POSTGRES_HOST', os.environ.get('PGHOST', 'postgres.railway.internal')),
@@ -233,7 +233,7 @@ try:
     auth = cur.rowcount
     cur.execute('UPDATE local_media_repository SET media_origin = %s WHERE media_origin IS NULL', (server_name,))
     orig = cur.rowcount
-    cur.execute(\"UPDATE local_media_repository SET media_source = '{\\\"media_type\\\": \\\"local\\\"}'::jsonb WHERE media_source IS NULL\")
+    cur.execute("UPDATE local_media_repository SET media_source = '{\"media_type\": \"local\"}'::jsonb WHERE media_source IS NULL")
     src = cur.rowcount
     print(f'Database fix: authenticated={auth}, media_origin={orig}, media_source={src}')
 
@@ -258,7 +258,6 @@ try:
         cur.execute('UPDATE users SET admin = 1 WHERE name = %s', (admin_user,))
         admin_rows = cur.rowcount
         print(f'Admin promotion: {admin_user} -> {admin_rows} rows updated')
-        # Also promote the full Matrix ID format
         full_id = f'@{admin_user}:{server_name}'
         cur.execute('UPDATE users SET admin = 1 WHERE name = %s', (full_id,))
         admin_rows2 = cur.rowcount
@@ -268,9 +267,6 @@ try:
         # This ensures the admin can always log in, even if a previous bootstrap
         # script changed the password temporarily
         if admin_pass:
-            import hashlib
-            # Synapse uses bcrypt for password hashing (via passlib)
-            # We use the same format Synapse expects
             try:
                 import bcrypt
                 hashed = bcrypt.hashpw(admin_pass.encode('utf-8'), bcrypt.gensalt(rounds=12)).decode('utf-8')
@@ -291,7 +287,7 @@ try:
     conn.close()
 except Exception as e:
     print(f'Database fix warning (non-fatal): {e}')
-"
+DBEOF
 
 echo "=== Database fix complete ==="
 
