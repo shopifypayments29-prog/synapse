@@ -251,9 +251,18 @@ try:
             # Only clean up if there are existing keys (one-time migration)
             # Check if any user_signing keys exist — if not, all keys were
             # created by the server bootstrap (not by clients), so they're unusable.
-            # The usage field is inside the key_data JSON column, not a separate column.
-            cur.execute("SELECT COUNT(*) FROM e2e_cross_signing_keys WHERE key_json::text LIKE '%%user_signing%%'")
-            us_count = cur.fetchone()[0]
+            # The usage field is inside a JSON column. Try different column names
+            # since the schema varies across Synapse versions.
+            us_count = 0
+            for col_name in ['key_json', 'key_data', 'stream_json', 'key_json_bytes']:
+                try:
+                    cur.execute(f"SELECT COUNT(*) FROM e2e_cross_signing_keys WHERE {col_name}::text LIKE '%%user_signing%%'")
+                    us_count = cur.fetchone()[0]
+                    print(f'Found user_signing keys via column {col_name}: {us_count}')
+                    break
+                except Exception:
+                    continue
+
             if us_count == 0:
                 # No user_signing keys = server-created keys = unusable, clean them up
                 cur.execute('DELETE FROM e2e_cross_signing_signatures')
