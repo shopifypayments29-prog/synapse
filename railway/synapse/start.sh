@@ -237,19 +237,35 @@ try:
     src = cur.rowcount
     print(f'Database fix: authenticated={auth}, media_origin={orig}, media_source={src}')
 
-    # Clean up stale cross-signing keys and signatures
-    # This removes ALL cross-signing data so the bootstrap script can
-    # recreate clean keys without stale signature conflicts.
-    # Without this, users with old cross-signing key signatures get
-    # "encryption failed due to unsigned devices" errors.
+    # ONE-TIME: Clean up server-created cross-signing keys that have no
+    # client-side private keys. These were created by a previous bootstrap
+    # script but are unusable because Element doesn't have the private keys.
+    # After this one-time cleanup, cross-signing is set up naturally by
+    # each user through Element (MSC3967 skips UIAA for first setup).
+    # DO NOT delete cross-signing keys on every restart — that would break
+    # user-created cross-signing setups.
     try:
-        cur.execute('DELETE FROM e2e_cross_signing_signatures')
-        sig_rows = cur.rowcount
-        cur.execute('DELETE FROM e2e_cross_signing_keys')
-        key_rows = cur.rowcount
-        print(f'Cross-signing cleanup: {key_rows} keys, {sig_rows} signatures deleted')
+        cur.execute("SELECT COUNT(*) FROM e2e_cross_signing_keys")
+        cs_count = cur.fetchone()[0]
+        if cs_count > 0:
+            # Only clean up if there are existing keys (one-time migration)
+            # Check if any user_signing keys exist — if not, the keys were
+            # created by the server bootstrap (not by clients), so they're unusable
+            cur.execute("SELECT COUNT(*) FROM e2e_cross_signing_keys WHERE usage = 'user_signing'")
+            us_count = cur.fetchone()[0]
+            if us_count == 0:
+                # No user_signing keys = server-created keys = unusable, clean them up
+                cur.execute('DELETE FROM e2e_cross_signing_signatures')
+                sig_rows = cur.rowcount
+                cur.execute('DELETE FROM e2e_cross_signing_keys')
+                key_rows = cur.rowcount
+                print(f'One-time cross-signing cleanup: {key_rows} unusable keys, {sig_rows} signatures deleted (server-created, no client private keys)')
+            else:
+                print(f'Cross-signing keys exist with user_signing keys ({us_count}), skipping cleanup (client-created keys are valid)')
+        else:
+            print('No cross-signing keys to clean up')
     except Exception as e:
-        print(f'Cross-signing cleanup (may not exist yet): {e}')
+        print(f'Cross-signing check warning (may not exist yet): {e}')
 
     # Promote admin users and reset admin password
     admin_user = os.environ.get('SYNAPSE_ADMIN_USER', '')
@@ -304,30 +320,14 @@ python -m synapse.app.homeserver --config-path "$CONFIG_PATH" &
 SYNAPSE_PID=$!
 echo "=== Synapse started (PID: $SYNAPSE_PID) ==="
 
-# Step 8: Cross-signing bootstrap — automatically set up cross-signing for all
-# users who don't have it. This permanently fixes the "encryption failed due to
-# unsigned devices" error for both existing and new users.
-echo "=== Waiting for Synapse to be ready for cross-signing bootstrap ==="
-MAX_WAIT=120
-WAITED=0
-while [ $WAITED -lt $MAX_WAIT ]; do
-    if curl -sf http://localhost:8009/_matrix/client/versions > /dev/null 2>&1; then
-        echo "=== Synapse is ready (waited ${WAITED}s) ==="
-        break
-    fi
-    WAITED=$((WAITED + 3))
-    sleep 3
-done
-
-if [ $WAITED -ge $MAX_WAIT ]; then
-    echo "WARNING: Synapse did not become ready within ${MAX_WAIT}s, skipping cross-signing bootstrap"
-else
-    # Step 8: Run cross-signing bootstrap
-    # Admin password is already reset in the database before Synapse starts (see Step 4)
-    echo "=== Running cross-signing bootstrap ==="
-    python3 /synapsechat/cross_signing_bootstrap.py 2>&1 || echo "WARNING: Cross-signing bootstrap had errors (non-fatal)"
-    echo "=== Cross-signing bootstrap complete ==="
-fi
+# Step 8: Cross-signing is handled client-side through Element.
+# MSC3967 is enabled (skip UIAA for first cross-signing key upload), so
+# users can set up cross-signing without re-entering their password.
+# Server-created cross-signing keys don't work because the client
+# doesn't have the private keys — Element must create them.
+# To set up cross-signing: Element → Settings → Security → Set up secure backup
+echo "=== Cross-signing: handled client-side via Element (MSC3967 enabled) ==="
+echo "=== Users should set up cross-signing in Element: Settings → Security ==="
 
 # Step 9: Wait for Synapse (keep container running)
 echo "=== SynapseChat is ready ==="
