@@ -237,8 +237,9 @@ try:
     src = cur.rowcount
     print(f'Database fix: authenticated={auth}, media_origin={orig}, media_source={src}')
 
-    # Promote admin users
+    # Promote admin users and reset admin password
     admin_user = os.environ.get('SYNAPSE_ADMIN_USER', '')
+    admin_pass = os.environ.get('SYNAPSE_ADMIN_PASS', '')
     if admin_user:
         cur.execute('UPDATE users SET admin = 1 WHERE name = %s', (admin_user,))
         admin_rows = cur.rowcount
@@ -248,6 +249,27 @@ try:
         cur.execute('UPDATE users SET admin = 1 WHERE name = %s', (full_id,))
         admin_rows2 = cur.rowcount
         print(f'Admin promotion: {full_id} -> {admin_rows2} rows updated')
+
+        # Reset admin password to the configured value
+        # This ensures the admin can always log in, even if a previous bootstrap
+        # script changed the password temporarily
+        if admin_pass:
+            import hashlib
+            # Synapse uses bcrypt for password hashing (via passlib)
+            # We use the same format Synapse expects
+            try:
+                import bcrypt
+                hashed = bcrypt.hashpw(admin_pass.encode('utf-8'), bcrypt.gensalt(rounds=12)).decode('utf-8')
+                cur.execute('UPDATE users SET password_hash = %s WHERE name = %s', (hashed, admin_user))
+                pw_rows = cur.rowcount
+                full_id = f'@{admin_user}:{server_name}'
+                cur.execute('UPDATE users SET password_hash = %s WHERE name = %s', (hashed, full_id))
+                pw_rows2 = cur.rowcount
+                print(f'Admin password reset: {admin_user} -> {pw_rows + pw_rows2} rows updated')
+            except ImportError:
+                print('WARNING: bcrypt not available, cannot reset admin password in database')
+            except Exception as e:
+                print(f'Admin password reset warning (non-fatal): {e}')
     else:
         print('No SYNAPSE_ADMIN_USER set, skipping admin promotion')
 
@@ -264,16 +286,39 @@ echo "=== Starting nginx (serving /.well-known/matrix/server) ==="
 nginx
 echo "=== nginx started ==="
 
-# Cross-signing: MSC3967 is enabled (config line 107) which skips UIAA for first
-# cross-signing key upload. Users set up cross-signing through Element Web:
-# Settings → Security → Set up cross-signing.
-# DO NOT reset cross-signing keys on startup — this causes "unsigned devices" errors
-# because deleting cross-signing keys makes all previously verified devices appear
-# unsigned, which blocks E2EE message sending.
-echo "=== Cross-signing: MSC3967 enabled, users set up via Element Web ==="
-
-# Step 7: Start Synapse
+# Step 7: Start Synapse in background so we can run bootstrap after it's ready
 echo "=== Starting Synapse on port 8009 (nginx proxies 8008->8009) ==="
 echo "=== Config path: $CONFIG_PATH ==="
 ls -la "$CONFIG_PATH" 2>/dev/null || echo "WARNING: Config file not found at $CONFIG_PATH"
-exec python -m synapse.app.homeserver --config-path "$CONFIG_PATH"
+python -m synapse.app.homeserver --config-path "$CONFIG_PATH" &
+SYNAPSE_PID=$!
+echo "=== Synapse started (PID: $SYNAPSE_PID) ==="
+
+# Step 8: Cross-signing bootstrap — automatically set up cross-signing for all
+# users who don't have it. This permanently fixes the "encryption failed due to
+# unsigned devices" error for both existing and new users.
+echo "=== Waiting for Synapse to be ready for cross-signing bootstrap ==="
+MAX_WAIT=120
+WAITED=0
+while [ $WAITED -lt $MAX_WAIT ]; do
+    if curl -sf http://localhost:8009/_matrix/client/versions > /dev/null 2>&1; then
+        echo "=== Synapse is ready (waited ${WAITED}s) ==="
+        break
+    fi
+    WAITED=$((WAITED + 3))
+    sleep 3
+done
+
+if [ $WAITED -ge $MAX_WAIT ]; then
+    echo "WARNING: Synapse did not become ready within ${MAX_WAIT}s, skipping cross-signing bootstrap"
+else
+    # Step 8: Run cross-signing bootstrap
+    # Admin password is already reset in the database before Synapse starts (see Step 4)
+    echo "=== Running cross-signing bootstrap ==="
+    python3 /synapsechat/cross_signing_bootstrap.py 2>&1 || echo "WARNING: Cross-signing bootstrap had errors (non-fatal)"
+    echo "=== Cross-signing bootstrap complete ==="
+fi
+
+# Step 9: Wait for Synapse (keep container running)
+echo "=== SynapseChat is ready ==="
+wait $SYNAPSE_PID
