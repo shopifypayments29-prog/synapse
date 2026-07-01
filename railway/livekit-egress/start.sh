@@ -4,7 +4,9 @@ set -e
 echo "=== LiveKit Egress Railway Startup ==="
 
 # Generate egress config from environment variables
-CONFIG=/etc/egress.yaml
+# Use /tmp/egress.yaml since the livekit/egress image runs as non-root (uid 1001)
+# and cannot write to /etc/
+CONFIG=/tmp/egress.yaml
 
 LIVEKIT_HOST="${LIVEKIT_HOST:-http://livekit.railway.internal:7880}"
 LIVEKIT_API_KEY="${LIVEKIT_API_KEY:-API3C8Q3C8Q3C8Q}"
@@ -21,8 +23,6 @@ api_secret: ${LIVEKIT_API_SECRET}
 # LiveKit server connection
 rpc:
   server_address: ${LIVEKIT_HOST}
-  rtc:
-    tcp_port: 7881
 
 # Redis for job coordination
 redis:
@@ -56,4 +56,9 @@ fi
 echo "=== Egress Config ==="
 cat "$CONFIG"
 echo "=== Starting LiveKit Egress ==="
-exec /egress --config "$CONFIG"
+
+# Set the config file path for the egress binary
+export EGRESS_CONFIG_FILE="$CONFIG"
+
+# Exec the original entrypoint which starts PulseAudio and then egress
+exec /entrypoint.sh

@@ -1,10 +1,11 @@
 FROM livekit/egress:latest
 
-# Copy startup script
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
+# The livekit/egress image has its own entrypoint that:
+# 1. Starts PulseAudio daemon
+# 2. Runs the egress binary
+# We just need to provide the config via EGRESS_CONFIG_FILE env var.
+# Our start.sh generates the config and then exec's the original entrypoint.
 
-# Egress runs on port 9090 by default for health checks
-EXPOSE 9090
+COPY --chmod=755 start.sh /start.sh
 
 ENTRYPOINT ["/start.sh"]
