@@ -19,6 +19,11 @@ echo "=== LiveKit Railway Startup ==="
 # The external ICE candidate will show: hayabusa.proxy.rlwy.net:25787
 # which is exactly where the TCP proxy forwards to container:7881,
 # and our redirect sends 7881 → 25787 where LiveKit is listening.
+#
+# TURN: Firefox requires TURNS (TURN over TLS) because it doesn't
+# support ICE-TCP. Chrome supports ICE-TCP via the Railway proxy.
+# TURN credentials are generated dynamically from the Metered.ca API
+# using METERED_API_KEY. Without a key, only ICE-TCP works (Chrome only).
 # ──────────────────────────────────────────────────────────────────────
 
 TCP_PROXY_DOMAIN="${RAILWAY_TCP_PROXY_DOMAIN:-}"
@@ -118,6 +123,134 @@ else
   echo "No REDIS_URL set, running in single-node mode"
 fi
 
+# ── TURN Server Configuration ──
+# Firefox requires TURNS (TURN over TLS on port 443) because it doesn't
+# support ICE-TCP. Chrome can use ICE-TCP via the Railway TCP proxy.
+# TURN credentials are generated dynamically from the Metered.ca API.
+#
+# To enable TURN:
+#   1. Sign up for a free Metered.ca account at https://www.metered.ca/
+#   2. Create a project and get your API key from the dashboard
+#   3. Set the METERED_API_KEY environment variable on this Railway service
+#
+# Without METERED_API_KEY, only ICE-TCP will work (Chrome only, Firefox fails).
+TURN_SECTION=""
+METERED_API_KEY="${METERED_API_KEY:-}"
+
+if [ -n "$METERED_API_KEY" ]; then
+  echo "Generating TURN credentials from Metered.ca API..."
+
+  # Generate TURN credentials with 24-hour TTL
+  # The API returns JSON with username, password, and server URLs
+  TURN_RESPONSE=$(curl -s -f "https://api.metered.ca/api/v1/turn/credentials?apiKey=${METERED_API_KEY}" 2>&1) || {
+    echo "WARNING: Failed to get TURN credentials from Metered.ca API"
+    echo "Response: ${TURN_RESPONSE:-empty}"
+    echo "WebRTC calls on Firefox will NOT work. Chrome may work via ICE-TCP."
+    TURN_RESPONSE=""
+  }
+
+  if [ -n "$TURN_RESPONSE" ]; then
+    echo "TURN credentials received from Metered.ca"
+
+    # Parse the TURN credentials from the API response
+    # Expected response format:
+    # {
+    #   "username": "...",
+    #   "password": "...",
+    #   "uris": [
+    #     "turn:a.relay.metered.ca:443?transport=tcp",
+    #     "turn:a.relay.metered.ca:443?transport=udp",
+    #     "turns:a.relay.metered.ca:443?transport=tcp",
+    #     ...
+    #   ]
+    # }
+
+    TURN_USERNAME=$(echo "$TURN_RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('username',''))" 2>/dev/null || echo "")
+    TURN_CREDENTIAL=$(echo "$TURN_RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('password',''))" 2>/dev/null || echo "")
+    TURN_URIS=$(echo "$TURN_RESPONSE" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+uris = d.get('uris', [])
+for uri in uris:
+    print(uri)
+" 2>/dev/null || echo "")
+
+    if [ -n "$TURN_USERNAME" ] && [ -n "$TURN_CREDENTIAL" ] && [ -n "$TURN_URIS" ]; then
+      echo "✓ TURN credentials generated (username: ${TURN_USERNAME})"
+
+      # Build TURN server entries from the URI list
+      # We include TURNS (TLS) for Firefox and TURN/TCP for Chrome fallback
+      TURN_ENTRIES=""
+      while IFS= read -r uri; do
+        if [ -z "$uri" ]; then
+          continue
+        fi
+
+        # Parse the URI: turn:HOST:PORT?transport=TRANSPORT
+        # or turns:HOST:PORT?transport=TRANSPORT
+        SCHEME=$(echo "$uri" | sed 's/:.*//' | tr '[:upper:]' '[:lower:]')
+        HOST_PORT=$(echo "$uri" | sed 's/^[a-z]*:\/\/\([^?]*\).*/\1/')
+        TRANSPORT=$(echo "$uri" | sed 's/.*transport=\([^&]*\).*/\1/' | tr '[:upper:]' '[:lower:]')
+
+        # Extract host and port
+        HOST=$(echo "$HOST_PORT" | sed 's/:.*//')
+        PORT=$(echo "$HOST_PORT" | sed 's/.*://' | sed 's/[^0-9]//g')
+
+        # Determine protocol
+        if [ "$SCHEME" = "turns" ]; then
+          PROTOCOL="tls"
+        elif [ "$TRANSPORT" = "tcp" ]; then
+          PROTOCOL="tcp"
+        else
+          PROTOCOL="udp"
+        fi
+
+        # Skip UDP entries — Railway blocks UDP
+        if [ "$PROTOCOL" = "udp" ]; then
+          echo "  Skipping UDP TURN entry (Railway blocks UDP): $uri"
+          continue
+        fi
+
+        echo "  Adding TURN entry: ${SCHEME}://${HOST}:${PORT} (${PROTOCOL})"
+
+        TURN_ENTRIES="${TURN_ENTRIES}
+    - host: ${HOST}
+      port: ${PORT}
+      protocol: ${PROTOCOL}
+      username: ${TURN_USERNAME}
+      credential: ${TURN_CREDENTIAL}"
+      done <<< "$TURN_URIS"
+
+      if [ -n "$TURN_ENTRIES" ]; then
+        TURN_SECTION="  turn_servers:${TURN_ENTRIES}"
+      else
+        echo "WARNING: No TCP/TLS TURN entries found in API response"
+        echo "WebRTC calls on Firefox will NOT work. Chrome may work via ICE-TCP."
+      fi
+    else
+      echo "WARNING: Failed to parse TURN credentials from API response"
+      echo "Raw response: ${TURN_RESPONSE:0:200}"
+      echo "WebRTC calls on Firefox will NOT work. Chrome may work via ICE-TCP."
+    fi
+  fi
+else
+  echo ""
+  echo "╔══════════════════════════════════════════════════════════════════╗"
+  echo "║  ⚠️  NO TURN SERVER CONFIGURED                                  ║"
+  echo "║                                                                ║"
+  echo "║  Firefox requires TURNS (TURN over TLS) for WebRTC calls.      ║"
+  echo "║  Chrome can use ICE-TCP via the Railway proxy.                 ║"
+  echo "║                                                                ║"
+  echo "║  To enable Firefox support:                                     ║"
+  echo "║  1. Sign up at https://www.metered.ca/ (free tier available)   ║"
+  echo "║  2. Get your API key from the dashboard                        ║"
+  echo "║  3. Set METERED_API_KEY environment variable on this service    ║"
+  echo "║                                                                ║"
+  echo "║  Without TURN, only Chrome will be able to make/receive calls. ║"
+  echo "╚══════════════════════════════════════════════════════════════════╝"
+  echo ""
+fi
+
 # ── Generate livekit.yaml ──
 CONFIG=/etc/livekit.yaml
 
@@ -134,26 +267,7 @@ rtc:
   # Railway blocks ALL UDP traffic. force_tcp ensures only TCP candidates
   # are generated, so clients connect via the Railway TCP proxy.
   force_tcp: true
-  # TURN servers for browsers that don't support ICE-TCP (e.g. Firefox).
-  # Firefox requires TURNS (TLS) for TCP relay — ICE-TCP alone is not enough.
-  # Railway blocks ALL UDP, so only TCP/TLS TURN works.
-  #
-  # a.relay.metered.ca: Metered.ca Open Relay Project (free, reliable)
-  #   - Port 443/TLS: TURNS for Firefox (tested: TLS handshake OK, valid cert)
-  #   - Port 80/TCP:  TURN for Chrome fallback
-  # Chrome uses ICE-TCP via the Railway proxy; Firefox uses TURNS via Metered.
-  turn_servers:
-    - host: a.relay.metered.ca
-      port: 443
-      protocol: tls
-      username: openrelayproject
-      credential: openrelayproject
-    - host: a.relay.metered.ca
-      port: 80
-      protocol: tcp
-      username: openrelayproject
-      credential: openrelayproject
-
+${TURN_SECTION:+$TURN_SECTION}
 room:
   auto_create: false
   enable_remote_unmute: true
@@ -176,6 +290,7 @@ echo "  ICE TCP:      ${ICE_TCP_PORT}"
 echo "  Node IP mode: ${NODE_IP_MODE}"
 echo "  Node IP:      ${NODE_IP:-auto}"
 echo "  TCP proxy:    ${TCP_PROXY_DOMAIN:-none}:${TCP_PROXY_PORT:-none} → container:${TCP_APP_PORT:-none}"
+echo "  TURN:         ${TURN_SECTION:+Configured}${TURN_SECTION:-Not configured (Chrome ICE-TCP only)}"
 echo ""
 
 if [ -n "$NODE_IP" ]; then
