@@ -131,9 +131,10 @@ rtc:
   port_range_start: 0
   port_range_end: 0
   use_external_ip: ${USE_EXTERNAL_IP}
-  allow_tcp_fallback: true
+  # Railway blocks ALL UDP traffic. force_tcp ensures only TCP candidates
+  # are generated, so clients connect via the Railway TCP proxy.
+  force_tcp: true
   # No TURN servers — Railway TCP proxy provides ICE-TCP relay path.
-  # External TURN servers (relay.metered.ca) are unreliable/down.
   # ICE-TCP through hayabusa.proxy.rlwy.net:${TCP_PROXY_PORT:-25787} works.
 
 room:
