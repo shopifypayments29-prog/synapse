@@ -38,8 +38,6 @@ fi
 # IMPORTANT: On Railway, UDP port ranges (50000-60000) are NOT exposed.
 # We use ICE-TCP only via the Railway TCP proxy (hayabusa.proxy.rlwy.net:25787)
 # which forwards to our port 7881. This ensures WebRTC connections work.
-#
-# NOTE: ice_servers is a TOP-LEVEL config key, NOT under rtc:
 cat > "$CONFIG" << YAML
 port: 7880
 rtc:
@@ -54,16 +52,19 @@ cat >> "$CONFIG" << YAML
   tcp_port: 7881
   port_range_start: 0
   port_range_end: 0
+  # Allow TCP fallback when UDP fails (which it always does on Railway)
+  allow_tcp_fallback: true
+  # TURN servers using our Railway TCP proxy — required because Railway
+  # doesn't expose UDP. Clients connect via ICE-TCP through this TURN server.
+  turn_servers:
+    - host: ${TCP_PROXY_HOST}
+      port: ${TCP_PROXY_PORT}
+      protocol: tcp
+      username: synapsechat
+      credential: synapsechat
 room:
   auto_create: false
   enable_remote_unmute: true
-# TURN server using our Railway TCP proxy — required because Railway
-# doesn't expose UDP. Clients use ICE-TCP through this TURN server.
-ice_servers:
-  - urls:
-      - "turn:${TCP_PROXY_HOST}:${TCP_PROXY_PORT}?transport=tcp"
-    username: "synapsechat"
-    credential: "synapsechat"
 logging:
   level: info
 YAML
