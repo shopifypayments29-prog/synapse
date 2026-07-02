@@ -304,5 +304,36 @@ cat > /app/mobile_guide/index.html << 'HTML_EOF'
 HTML_EOF
 echo "✓ Mobile guide replaced"
 
+# 5. Inject TDZ error recovery patch into index.html
+# Element Web v1.12.22 has a bug where the Markdown renderer triggers
+# "ReferenceError: can't access lexical declaration 'X' before initialization"
+# during initial load (GitHub issue #30025). This patch catches that specific
+# error and recovers by reloading the page once, preventing the persistent
+# "Something went wrong" dialog.
+echo "Patching index.html with TDZ error recovery..."
+sed -i '/<\/head>/i\
+<script>\
+(function(){\
+  var reloaded = sessionStorage.getItem("synapsechat_tdz_recovery");\
+  window.addEventListener("error", function(e){\
+    if(e.error && e.error instanceof ReferenceError && e.error.message.indexOf("lexical declaration")!==-1){\
+      if(reloaded){\
+        console.warn("SynapseChat: TDZ error persists after reload, suppressing");\
+        e.preventDefault();\
+        return true;\
+      }\
+      console.warn("SynapseChat: TDZ error detected, reloading page for recovery");\
+      sessionStorage.setItem("synapsechat_tdz_recovery","1");\
+      location.reload();\
+      return true;\
+    }\
+  });\
+  if(reloaded){\
+    sessionStorage.removeItem("synapsechat_tdz_recovery");\
+  }\
+})();\
+</script>' /app/index.html
+echo "✓ TDZ recovery patch injected"
+
 echo "All customizations applied! Starting nginx..."
 exec nginx -g 'daemon off;'

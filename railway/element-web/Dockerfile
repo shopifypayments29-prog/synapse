@@ -2,7 +2,7 @@
 # ARG cache-bust forces Docker to re-run all layers below when the arg value changes
 ARG CACHE_BUST=13
 
-FROM vectorim/element-web:latest
+FROM vectorim/element-web:v1.12.23-rc.0
 
 # Switch to root to apply customizations
 USER root
