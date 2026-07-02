@@ -134,8 +134,26 @@ rtc:
   # Railway blocks ALL UDP traffic. force_tcp ensures only TCP candidates
   # are generated, so clients connect via the Railway TCP proxy.
   force_tcp: true
-  # No TURN servers — Railway TCP proxy provides ICE-TCP relay path.
-  # ICE-TCP through hayabusa.proxy.rlwy.net:${TCP_PROXY_PORT:-25787} works.
+  # TURN servers for browsers that don't support ICE-TCP (e.g. Firefox).
+  # Firefox requires TURNS (TLS) for TCP relay — ICE-TCP alone is not enough.
+  # freeTURN.net provides free TURN/TURNS service (2Mbit/s limit).
+  # Chrome uses ICE-TCP via the Railway proxy; Firefox uses TURNS via freeTURN.
+  turn_servers:
+    - host: freeturn.net
+      port: 5349
+      protocol: tls
+      username: free
+      credential: free
+    - host: freeturn.net
+      port: 3478
+      protocol: tcp
+      username: free
+      credential: free
+    - host: freeturn.net
+      port: 3478
+      protocol: udp
+      username: free
+      credential: free
 
 room:
   auto_create: false
