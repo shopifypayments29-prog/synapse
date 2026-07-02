@@ -136,24 +136,23 @@ rtc:
   force_tcp: true
   # TURN servers for browsers that don't support ICE-TCP (e.g. Firefox).
   # Firefox requires TURNS (TLS) for TCP relay — ICE-TCP alone is not enough.
-  # freeTURN.net provides free TURN/TURNS service (2Mbit/s limit).
-  # Chrome uses ICE-TCP via the Railway proxy; Firefox uses TURNS via freeTURN.
+  # Railway blocks ALL UDP, so only TCP/TLS TURN works.
+  #
+  # a.relay.metered.ca: Metered.ca Open Relay Project (free, reliable)
+  #   - Port 443/TLS: TURNS for Firefox (tested: TLS handshake OK, valid cert)
+  #   - Port 80/TCP:  TURN for Chrome fallback
+  # Chrome uses ICE-TCP via the Railway proxy; Firefox uses TURNS via Metered.
   turn_servers:
-    - host: freeturn.net
-      port: 5349
+    - host: a.relay.metered.ca
+      port: 443
       protocol: tls
-      username: free
-      credential: free
-    - host: freeturn.net
-      port: 3478
+      username: openrelayproject
+      credential: openrelayproject
+    - host: a.relay.metered.ca
+      port: 80
       protocol: tcp
-      username: free
-      credential: free
-    - host: freeturn.net
-      port: 3478
-      protocol: udp
-      username: free
-      credential: free
+      username: openrelayproject
+      credential: openrelayproject
 
 room:
   auto_create: false
