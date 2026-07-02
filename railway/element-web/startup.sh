@@ -38,6 +38,14 @@ server {
         try_files $uri $uri/ /mobile_guide/index.html;
     }
 
+    # Domain-specific config: return 404 if file doesn't exist
+    # so Element Web falls back to config.json instead of getting HTML
+    location ~* ^/config\.[^/]+\.json$ {
+        root /app;
+        default_type application/json;
+        try_files $uri =404;
+    }
+
     location / {
         root /app;
         index index.html index.htm;
