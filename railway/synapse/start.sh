@@ -282,14 +282,14 @@ try:
     except Exception as e:
         print(f'Cross-signing check warning (may not exist yet): {e}')
 
-    # Clean up phantom devices (devices with no last_seen and no display name).
+    # Clean up phantom devices (devices with no last_seen timestamp).
     # These are created when a user starts a session but never completes login/crypto setup.
     # They cause "encryption failed — unsigned devices" errors because they have no keys.
     try:
         cur.execute("""
             DELETE FROM devices
             WHERE last_seen IS NULL
-              AND user_id IN (SELECT name FROM users WHERE NOT admin)
+              AND user_id IN (SELECT name FROM users WHERE admin = 0)
         """)
         phantom_rows = cur.rowcount
         print(f'Phantom device cleanup: {phantom_rows} phantom devices deleted (no last_seen, non-admin users)')
